@@ -1,0 +1,31 @@
+name: Auto Checkin
+
+on:
+  #schedule:
+  #  - cron: '0 0 * * *'  # 每天 UTC 时间 00:00 执行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run checkin script
+      run: node checkin.js
+      env:
+        JC: ${{ secrets.JC }}
+        ZH: ${{ secrets.ZH }}
+        MM: ${{ secrets.MM }}
+        TGTOKEN: ${{ secrets.TGTOKEN }}
+        TGID: ${{ secrets.TGID }}
