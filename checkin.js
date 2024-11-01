@@ -75,6 +75,18 @@ async function sendMessage(msg = "") {
     }
 }
 
+function extractDataClipboardText(html) {
+    const regex = /data-clipboard-text="([^"]+)"/g;
+    const results = [];
+    let match;
+
+    while ((match = regex.exec(html)) !== null) {
+        results.push(match[1]);
+    }
+
+    return results;
+}
+
 // checkin 函数修改
 async function checkin() {
     try {
@@ -120,6 +132,25 @@ async function checkin() {
             // 等待确保登录状态
             await new Promise(resolve => setTimeout(resolve, 1000));
 
+            // 获取用户页面
+            const userResponse = await fetch(`${domain}/user`, {
+                method: 'GET',
+                headers: {
+                    'Cookie': cookies,
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                    'Referer': `${domain}/auth/login`,
+                    'DNT': '1',
+                },
+            });
+
+            const userHtml = await userResponse.text();
+
+            // 提取 data-clipboard-text 值
+            const dataClipboardTextValues = extractDataClipboardText(userHtml);
+            console.log('Extracted data-clipboard-text values:', dataClipboardTextValues);
+
+
             // 签到请求
             const checkinResponse = await fetch(`${domain}/user/checkin`, {
                 method: 'POST',
@@ -145,9 +176,14 @@ async function checkin() {
 
                 let resultMessage;
                 if (checkinResult.ret === 1 || checkinResult.ret === 0) {
-                    resultMessage = `🎉 签到结果 🎉\n账号: ${currentUser.substring(0, 1)}****${currentUser.substring(currentUser.length - 5)}\n${checkinResult.msg || (checkinResult.ret === 1 ? '签到成功' : '签到失败')}`;
+                    resultMessage = `🎉 签到结果 🎉\n账号: ${currentUser}\n${checkinResult.msg || (checkinResult.ret === 1 ? '签到成功' : '签到失败')}`;
                 } else {
-                    resultMessage = `🎉 签到结果 🎉\n账号: ${currentUser.substring(0, 1)}****${currentUser.substring(currentUser.length - 5)}\n${checkinResult.msg || '签到结果未知'}`;
+                    resultMessage = `🎉 签到结果 🎉\n账号: ${currentUser}\n${checkinResult.msg || '签到结果未知'}`;
+                }
+
+                // 拼接 data-clipboard-text 值到 resultMessage 末尾
+                if (dataClipboardTextValues.length > 0) {
+                    resultMessage += `\n节点链接: ${dataClipboardTextValues.join(', ')}`;
                 }
 
                 allResults.push(resultMessage);
