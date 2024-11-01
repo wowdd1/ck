@@ -24,8 +24,8 @@ jobs:
     - name: Run checkin script
       run: node checkin.js
       env:
-        JC: ${{ secrets.JC }}
-        ZH: ${{ secrets.ZH }}
-        MM: ${{ secrets.MM }}
+        DOMAIN: ${{ secrets.DOMAIN }}
+        USER: ${{ secrets.USER }}
+        PASS: ${{ secrets.PASS }}
         TGTOKEN: ${{ secrets.TGTOKEN }}
         TGID: ${{ secrets.TGID }}
