@@ -4,6 +4,7 @@ let pass = "pass1,pass2,pass3";
 let 签到结果;
 let BotToken = '';
 let ChatID = '';
+let SUB="";
 
 export default {
     // HTTP 请求处理函数保持不变
@@ -43,6 +44,7 @@ async function initializeVariables(env) {
     if (!domain.includes("//")) domain = `https://${domain}`;
     BotToken = env.TGTOKEN || BotToken;
     ChatID = env.TGID || ChatID;
+    SUB = env.SUB || SUB;
 
     // 将 user 和 pass 转换为数组
     user = user.split(',');
@@ -123,7 +125,12 @@ async function checkin() {
             // 获取 Cookie
             const cookieHeader = loginResponse.headers.get('set-cookie');
             if (!cookieHeader) {
-                throw new Error('未收到Cookie');
+                //throw new Error('未收到Cookie');
+                let result;
+                result = `${currentUser} 未收到Cookie`;
+
+                allResults.push(result);
+                continue;
             }
 
             console.log('Received cookies:', cookieHeader);
@@ -132,24 +139,27 @@ async function checkin() {
             // 等待确保登录状态
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // 获取用户页面
-            const userResponse = await fetch(`${domain}/user`, {
-                method: 'GET',
-                headers: {
-                    'Cookie': cookies,
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                    'Referer': `${domain}/auth/login`,
-                    'DNT': '1',
-                },
-            });
+            let dataClipboardTextValues = [];
+            if (SUB == 'true') {
+                // 获取用户页面
+                const userResponse = await fetch(`${domain}/user`, {
+                    method: 'GET',
+                    headers: {
+                        'Cookie': cookies,
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                        'Referer': `${domain}/auth/login`,
+                        'DNT': '1',
+                    },
+                });
 
-            const userHtml = await userResponse.text();
+                const userHtml = await userResponse.text();
 
-            // 提取 data-clipboard-text 值
-            const dataClipboardTextValues = extractDataClipboardText(userHtml);
-            console.log('Extracted data-clipboard-text values:', dataClipboardTextValues);
+                // 提取 data-clipboard-text 值
+                dataClipboardTextValues = extractDataClipboardText(userHtml);
+                console.log('Extracted data-clipboard-text values:', dataClipboardTextValues);
 
+            }
 
             // 签到请求
             const checkinResponse = await fetch(`${domain}/user/checkin`, {
